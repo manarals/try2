@@ -1,87 +1,61 @@
 import streamlit as st
-import tensorflow as tf
-import random
-from PIL import Image, ImageOps
+from PIL import Image
 import numpy as np
+from keras.models import load_model
 
-import warnings
-warnings.filterwarnings("ignore")
+st.title("Image Classification with Streamlit")
 
-st.set_page_config(
-    page_title="Mango Leaf Disease Detection",
-    page_icon = ":mango:",
-    initial_sidebar_state = 'auto'
-)
-hide_streamlit_style = """
-            <style>
-            #MainMenu {visibility: hidden;}
-            footer {visibility: hidden;}
-            </style>
-            """
-st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+# Function to preprocess the image
+def preprocess_image(image):
+    image_size = 224
 
-def prediction_cls(prediction):
-    for key, clss in class_names.items():
-        if np.argmax(prediction)==clss:
-            return key
+    # Resize the image to match the input shape of the model
+    resized_image = image.resize((image_size, image_size))
 
-@st.cache(allow_output_mutation=True)
-def load_model():
-    model=tf.keras.models.load_model('reg6.h5')
-    return model
-with st.spinner('Model is being loaded..'):
-    model=load_model()
+    # Convert the image to array
+    image_array = np.array(resized_image)
 
+    # Normalize pixel values to range [0, 1]
+    image_array = image_array / 255.0
 
+    return image_array
 
-st.write("""
-         # Mango Disease Detection with Remedy Suggestion
-         """
-         )
+# Function to make predictions
+def predict_image(image):
+    # Preprocess the image
+    processed_image = preprocess_image(image)
 
-file = st.file_uploader("", type=["jpg", "png"])
+    # Load your model
+    model_path = 'reg6.hdf5'
+    weights_location = 'reg6_weights.hdf5'
+    regnety006_custom_model = load_model(model_path)
+    regnety006_custom_model.load_weights(weights_location)
 
-def import_and_predict(image_data, model):
-    size = (224, 224)    
-    image = ImageOps.fit(image_data, size, Image.Resampling.LANCZOS)
-    img = np.asarray(image)
-    img_reshape = img[np.newaxis,...]
-    prediction = model.predict(img_reshape)
+    # Make prediction
+    prediction = regnety006_custom_model.predict(np.expand_dims(processed_image, axis=0))
+
     return prediction
 
-if file is None:
-    st.text("Please upload an image file")
-else:
-    image = Image.open(file)
-    st.image(image, use_column_width=True)
-    predictions = import_and_predict(image, model)
-    x = random.randint(98, 99) + random.randint(0, 99) * 0.01
-    st.sidebar.error("Accuracy : " + str(x) + " %")
+# Upload image
+uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
 
-    class_names = {0: 'NoDR', 1: 'Mild', 2: 'Moderate', 3: 'Severe', 4: 'proDR'}
+if uploaded_file is not None:
+    # Read the uploaded image as PIL Image
+    pil_image = Image.open(uploaded_file)
 
-    predicted_class_index = np.argmax(predictions)
-    predicted_class_name = class_names[predicted_class_index]
+    # Display the uploaded image
+    st.image(pil_image, caption='Uploaded Image', use_column_width=True)
 
-    string = "Detected Disease : " + predicted_class_name
-    st.sidebar.warning(string)
+    # Make prediction
+    prediction = predict_image(pil_image)
 
-    if predicted_class_name == 'Healthy':
-        st.balloons()
-        st.sidebar.success(string)
-    else:
-        st.markdown("## Remedy")
+    # Display the predicted probabilities for each class
+    class_names = ['Class 0', 'Class 1', 'Class 2', 'Class 3', 'Class 4']  # Modify according to your class names
+    st.write("Predicted Probabilities:")
+    for i in range(len(class_names)):
+        st.write(f"{class_names[i]}: {prediction[0][i]*100:.2f}%")
 
-        # Add remedy suggestions based on the predicted class
-        if predicted_class_name == 'NoDR':
-            st.info("Remedy suggestion for Anthracnose")
-        elif predicted_class_name == 'Mild':
-            st.info("Remedy suggestion for Bacterial Canker")
-        elif predicted_class_name == 'Moderate':
-            st.info("Remedy suggestion for Cutting Weevil")
-        elif predicted_class_name == 'Severe':
-            st.info("Remedy suggestion for Die Back")
-        elif predicted_class_name == 'proDR':
-            st.info("Remedy suggestion for Gall Midge")
-
-
+    # Assuming prediction is an array of probabilities for each class,
+    # you can find the predicted label using argmax
+    predicted_label = np.argmax(prediction)
+    st.write("Predicted Label:", predicted_label)
