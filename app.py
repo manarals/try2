@@ -27,7 +27,7 @@ def prediction_cls(prediction):
 
 @st.cache(allow_output_mutation=True)
 def load_model():
-    model=tf.keras.models.load_model('mango_model.h5')
+    model=tf.keras.models.load_model('reg6.h5')
     return model
 with st.spinner('Model is being loaded..'):
     model=load_model()
@@ -58,7 +58,7 @@ else:
     x = random.randint(98, 99) + random.randint(0, 99) * 0.01
     st.sidebar.error("Accuracy : " + str(x) + " %")
 
-    class_names = {0: 'Anthracnose', 1: 'Bacterial Canker', 2: 'Cutting Weevil', 3: 'Die Back', 4: 'Gall Midge', 5: 'Healthy', 6: 'Powdery Mildew', 7: 'Sooty Mould'}
+    class_names = {0: 'NoDR', 1: 'Mild', 2: 'Moderate', 3: 'Severe', 4: 'proDR'}
 
     predicted_class_index = np.argmax(predictions)
     predicted_class_name = class_names[predicted_class_index]
@@ -73,18 +73,15 @@ else:
         st.markdown("## Remedy")
 
         # Add remedy suggestions based on the predicted class
-        if predicted_class_name == 'Anthracnose':
+        if predicted_class_name == 'NoDR':
             st.info("Remedy suggestion for Anthracnose")
-        elif predicted_class_name == 'Bacterial Canker':
+        elif predicted_class_name == 'Mild':
             st.info("Remedy suggestion for Bacterial Canker")
-        elif predicted_class_name == 'Cutting Weevil':
+        elif predicted_class_name == 'Moderate':
             st.info("Remedy suggestion for Cutting Weevil")
-        elif predicted_class_name == 'Die Back':
+        elif predicted_class_name == 'Severe':
             st.info("Remedy suggestion for Die Back")
-        elif predicted_class_name == 'Gall Midge':
+        elif predicted_class_name == 'proDR':
             st.info("Remedy suggestion for Gall Midge")
-        elif predicted_class_name == 'Powdery Mildew':
-            st.info("Remedy suggestion for Powdery Mildew")
-        elif predicted_class_name == 'Sooty Mould':
-            st.info("Remedy suggestion for Sooty Mould")
+
 
